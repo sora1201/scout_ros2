@@ -26,6 +26,8 @@ ScoutBaseRos::ScoutBaseRos(std::string node_name)
 
   this->declare_parameter("simulated_robot", rclcpp::ParameterValue(false));
   this->declare_parameter("control_rate", rclcpp::ParameterValue(50));
+  
+  this->declare_parameter("publish_tf", rclcpp::ParameterValue(true));
 
   LoadParameters();
 }
@@ -44,6 +46,8 @@ void ScoutBaseRos::LoadParameters() {
   this->get_parameter_or<bool>("simulated_robot", simulated_robot_, false);
   this->get_parameter_or<int>("control_rate", sim_control_rate_, 50);
 
+  this->get_parameter_or<bool>("publish_tf", publish_tf_, true);
+
   std::cout << "Loading parameters: " << std::endl;
   std::cout << "- port name: " << port_name_ << std::endl;
   std::cout << "- odom frame name: " << odom_frame_ << std::endl;
@@ -58,6 +62,7 @@ void ScoutBaseRos::LoadParameters() {
   std::cout << "- simulated robot: " << std::boolalpha << simulated_robot_
             << std::endl;
   std::cout << "- sim control rate: " << sim_control_rate_ << std::endl;
+  std::cout << "- publish tf: " << std::boolalpha << publish_tf_ << std::endl;
   std::cout << "----------------------------" << std::endl;
 }
 
@@ -132,7 +137,8 @@ void ScoutBaseRos::Run() {
     messenger->SetBaseFrame(base_frame_);
     messenger->SetOdometryTopicName(odom_topic_name_);
     if (simulated_robot_) messenger->SetSimulationMode(sim_control_rate_);
-
+    messenger->SetPublishTF(publish_tf_);
+    
     // connect to robot and setup ROS subscription
     if (port_name_.find("can") != std::string::npos) {
       if (robot_->Connect(port_name_)) {

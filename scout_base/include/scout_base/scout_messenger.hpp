@@ -35,6 +35,7 @@ class ScoutMessenger {
   void SetOdometryFrame(std::string frame) { odom_frame_ = frame; }
   void SetBaseFrame(std::string frame) { base_frame_ = frame; }
   void SetOdometryTopicName(std::string name) { odom_topic_name_ = name; }
+  void SetPublishTF(bool flag) { publish_tf_ = flag; }
 
   void SetSimulationMode(int loop_rate) {
     simulated_robot_ = true;
@@ -57,8 +58,9 @@ class ScoutMessenger {
         "/light_control", 5,
         std::bind(&ScoutMessenger::LightCmdCallback, this,
                   std::placeholders::_1));
-
-    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
+    
+    if (publish_tf_)
+      tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_);
   }
 
   void PublishStateToROS() {
@@ -97,8 +99,8 @@ class ScoutMessenger {
           actuator.actuator_hs_state[i].rpm;
       status_msg.actuator_states[motor_id].current =
           actuator.actuator_hs_state[i].current;
-      //status_msg.actuator_states[motor_id].pulse_count =
-          //actuator.actuator_hs_state[i].pulse_count;
+      // status_msg.actuator_states[motor_id].pulse_count =
+      //     actuator.actuator_hs_state[i].pulse_count;
 
       // actuator_ls_state
       motor_id = actuator.actuator_ls_state[i].motor_id;
@@ -109,8 +111,8 @@ class ScoutMessenger {
           actuator.actuator_ls_state[i].driver_temp;
       status_msg.actuator_states[motor_id].motor_temperature =
           actuator.actuator_ls_state[i].motor_temp;
-      //status_msg.actuator_states[motor_id].driver_state =
-          //actuator.actuator_ls_state[i].driver_state;
+      // status_msg.actuator_states[motor_id].driver_state =
+      //     actuator.actuator_ls_state[i].driver_state;
     }
 
     status_msg.light_control_enabled = state.light_state.enable_cmd_ctrl;
@@ -139,6 +141,8 @@ class ScoutMessenger {
 
   bool simulated_robot_ = false;
   int sim_control_rate_ = 50;
+
+  bool publish_tf_ = true;
 
   std::mutex twist_mutex_;
   geometry_msgs::msg::Twist current_twist_;
@@ -260,7 +264,8 @@ class ScoutMessenger {
     tf_msg.transform.translation.z = 0.0;
     tf_msg.transform.rotation = odom_quat;
 
-    tf_broadcaster_->sendTransform(tf_msg);
+    if (publish_tf_)
+      tf_broadcaster_->sendTransform(tf_msg);
 
     // publish odometry and tf messages
     nav_msgs::msg::Odometry odom_msg;
